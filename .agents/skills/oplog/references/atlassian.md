@@ -10,7 +10,7 @@
 - 문서 구조 표준화와 민감정보 제거 규칙도 부모 `oplog` skill에서 상속받습니다.
 - 이 reference는 주로 `site / space / title / content` 확정, MCP tool/schema discovery, 권한 확인, 그리고 Confluence page create 흐름을 다룹니다.
 
-따라서 source repository나 게시 본문이 아직 준비되지 않았으면 먼저 그것을 확인해야 하며, 기존 페이지가 있다고 가정해 자동 update/upsert를 기본 동작으로 삼지 않습니다.
+이 reference는 부모 `oplog`가 **현재 세션 기준으로 초안을 이미 준비했다는 전제**에서 사용합니다. 따라서 여기서는 source repository를 처음부터 다시 고르기보다, draft-ready 상태에서 Atlassian 대상 정보와 publish 가능성을 구체화하는 데 집중합니다. 또한 기존 페이지가 있다고 가정해 자동 update/upsert를 기본 동작으로 삼지 않습니다.
 
 ## 먼저 확인할 것
 
@@ -19,7 +19,7 @@
 - `source_repo_path`
 - `source_branch` (선택)
 
-저장소 후보가 여러 개라면 사용자에게 물어봅니다.
+저장소 후보가 여러 개라면 사용자에게 물어봅니다. 다만 이는 현재 세션 기준 초안을 override해야 할 때만 다시 확인합니다.
 
 ### 2. 게시 대상
 필수 권장값:
@@ -42,6 +42,8 @@
 - 먼저 create/update 관련 tool이 실제로 노출되는지, 어떤 식별자나 검색 기준이 필요한지 확인한 뒤에만 update 가능 여부를 안내합니다.
 
 기준 저장소와 Confluence space는 별개입니다.
+
+이 단계는 draft가 이미 준비된 뒤 진행되며, 질문은 가능한 한 `site` → `space` → `title` → `publish 여부` 순으로 좁혀갑니다.
 
 ## MVP 범위
 

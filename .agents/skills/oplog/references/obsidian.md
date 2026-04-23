@@ -10,7 +10,7 @@
 - 문서 구조 표준화와 민감정보 제거 규칙도 부모 `oplog` skill에서 상속받습니다.
 - 이 reference는 주로 `vault / path / mode` 확정과 실제 게시 흐름을 다룹니다.
 
-따라서 source repository가 아직 확정되지 않았거나, 게시할 본문(content)이 준비되지 않았다면 먼저 그 정보를 확인해야 합니다.
+이 reference는 부모 `oplog`가 **현재 세션 기준으로 초안을 이미 준비했다는 전제**에서 사용합니다. 따라서 여기서는 source repository를 처음부터 다시 고르기보다, draft-ready 상태에서 Obsidian 대상 정보만 구체화하는 데 집중합니다.
 
 ## 먼저 확인할 것
 
@@ -19,7 +19,7 @@
 - `source_repo_path`
 - `source_branch` (선택)
 
-여러 저장소 중 어떤 저장소를 기준으로 생성된 문서인지 불분명하면 먼저 사용자에게 확인합니다.
+여러 저장소 중 어떤 저장소를 기준으로 생성된 문서인지 불분명하거나, 사용자가 현재 세션 기준 초안을 override하길 원하면 그때만 사용자에게 다시 확인합니다.
 
 ### 2. 게시 대상
 - `vault`
@@ -27,6 +27,8 @@
 - `mode` (`create` / `append` / `prepend`)
 
 기준 저장소와 Obsidian vault는 서로 다른 개념입니다.
+
+이 단계는 draft가 이미 준비된 뒤 진행되며, 질문은 가능한 한 `vault` → `path` → `mode` 순으로 좁혀갑니다.
 
 ## Vault 선택 규칙
 

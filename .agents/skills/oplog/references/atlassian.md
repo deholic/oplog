@@ -109,3 +109,125 @@ update/upsert는 create-first 흐름이 안정화된 뒤 추가합니다.
 - 문서 body preview
 
 를 먼저 보여주고, 실제 MCP write는 하지 않습니다.
+
+## MCP unavailable 예외 처리 규칙
+
+Confluence 게시는 **문서 생성**과 **게시 검증**을 분리해서 다룹니다.
+
+즉:
+- 문서 초안 생성 성공
+- Confluence 게시 성공
+
+은 같은 상태가 아닙니다.
+
+Atlassian MCP를 사용할 수 없거나, Confluence write에 필요한 capability가 없으면 **게시 성공으로 처리하지 않습니다.**
+이 경우 기본 동작은 **draft-only fallback** 입니다.
+
+### 1. usable MCP 판단 기준
+
+아래를 모두 만족할 때만 “usable Confluence MCP”로 봅니다.
+
+1. Atlassian MCP에 연결 가능하다
+2. `tools/list` 등으로 Confluence 관련 write tool을 확인할 수 있다
+3. 필요한 입력 schema를 확인할 수 있다
+4. 현재 인증/권한으로 실제 write가 가능하다
+5. 대상 site/space 접근이 가능하다
+
+하나라도 만족하지 못하면, Confluence publish는 진행하지 않습니다.
+
+### 2. 실패 유형 분류
+
+#### A. capability absent
+예:
+- Atlassian MCP 자체가 없음
+- MCP는 있지만 Confluence write tool이 없음
+- tool discovery 자체가 불가능함
+
+처리:
+- publish 시도 중단
+- 최종 문서만 생성
+- 상태를 `Draft ready, not published` 로 반환
+- 사용자가 원하면 나중에 다시 publish 시도
+
+#### B. capability unusable
+예:
+- authentication failure
+- insufficient permission
+- admin policy restriction
+- API token 비활성
+- write scope 부족
+- target space 접근 불가
+
+처리:
+- retry를 반복하지 않음
+- 사용자 액션이 필요하다고 명확히 설명
+- 최종 문서는 draft로 반환
+- 상태를 `Blocked — needs access or configuration fix` 로 반환
+
+#### C. transient failure
+예:
+- 일시적 연결 실패
+- 세션 만료
+- 일시적 MCP 응답 실패
+
+처리:
+- 안전한 사전 확인 단계에서는 제한적으로 1회 재시도 가능
+- 그래도 실패하면 draft-only fallback으로 전환
+- 상태를 `Draft ready, not published` 로 반환
+
+#### D. ambiguous / unverified
+예:
+- create 호출 응답은 왔지만 page URL/ID 확인 실패
+- write 성공 여부를 검증할 수 없음
+
+처리:
+- 성공으로 단정하지 않음
+- 상태를 `Publish attempted but unverified` 로 반환
+- 확인 가능한 식별자나 응답이 있으면 함께 제공
+- 사용자에게 수동 확인을 요청
+
+### 3. draft-only fallback 규칙
+
+Confluence publish를 수행할 수 없으면 아래를 반드시 반환합니다.
+
+- 최종 문서 본문
+- 기준 저장소 정보
+- 대상 site/space/title 초안
+- publish가 수행되지 않은 이유
+- 사용자가 다음에 할 수 있는 선택지
+
+예시 상태 메시지:
+
+- `Draft ready, not published`
+- `Blocked — needs access or configuration fix`
+- `Publish attempted but unverified`
+
+### 4. 사용자 안내 문구 예시
+
+#### MCP 자체가 없을 때
+> Confluence 게시에 필요한 Atlassian MCP를 사용할 수 없어, 이번에는 게시를 수행하지 않았습니다. 대신 게시 가능한 문서 초안을 준비했습니다.
+
+#### write tool이 없을 때
+> 현재 연결된 Atlassian MCP에서 Confluence write tool을 확인할 수 없어 게시를 진행하지 않았습니다. 문서 초안은 준비되어 있으며, MCP 설정이 준비되면 다시 게시할 수 있습니다.
+
+#### 권한/정책 문제일 때
+> 문서는 준비되었지만 현재 계정 또는 조직 정책으로 Confluence write 권한을 사용할 수 없어 게시가 차단되었습니다. 권한 또는 설정이 해결되면 다시 시도할 수 있습니다.
+
+#### 검증 실패일 때
+> 게시 요청은 시도했지만 최종 생성 여부를 검증하지 못했습니다. 성공으로 단정하지 않고, 확인 가능한 정보만 반환합니다.
+
+### 5. fallback 이후 다음 선택지
+
+Confluence publish가 불가능할 때는 아래 중 하나를 제안합니다.
+
+1. MCP/권한 설정 후 다시 시도
+2. 다른 publish target 선택
+3. draft만 복사해서 수동 게시
+4. 이번에는 문서 초안만 저장
+
+### 6. 하면 안 되는 것
+
+- MCP가 없는데 게시 성공처럼 말하지 말 것
+- write 권한이 불분명한데 create 성공을 전제하지 말 것
+- transient가 아닌 실패를 반복 재시도하지 말 것
+- draft-only fallback을 조용히 처리하지 말고, 반드시 게시 실패/미실행 상태를 명시할 것

@@ -1,29 +1,30 @@
 ---
 name: oplog
-version: 0.3.0
+version: 0.4.0
 description: "AI를 통해 수행한 작업과 컨텍스트를 한국어 문서로 정리하고, 대상 에디터에 게시할 수 있도록 준비합니다."
 ---
+<!-- Generated from canonical/oplog. Do not edit target copies by hand. -->
 
 # oplog
 
 AI를 통해 수행한 작업 내용을 한국어 문서로 요약하고, Obsidian이나 Atlassian 같은 대상 시스템에 게시할 수 있도록 준비하는 공통 스킬입니다.
 
-이 스킬은 게시 자체보다 **현재 세션 기준 문서 초안 준비**, **문서 구조 표준화**, **민감정보 제거**, **대상별 provider reference를 참고한 게시 판단**을 담당합니다.
+이 스킬은 게시 자체보다 **현재 작업 맥락 기준 문서 초안 준비**, **문서 구조 표준화**, **민감정보 제거**, **대상별 provider reference를 참고한 게시 판단**을 담당합니다.
 
 ## 이 스킬의 역할 경계
 
 이 스킬은 **공통 orchestration / 문서 준비 / 라우팅**을 담당합니다.
 
-- 현재 세션과 현재 워크스페이스를 기본 source context로 사용해 문서 초안을 준비합니다.
+- 현재 작업 맥락과 현재 워크스페이스를 기본 source context로 사용해 문서 초안을 준비합니다.
 - source repository override가 필요하면 그때만 별도로 확정합니다.
 - 문서 구조를 표준화합니다.
 - 민감정보를 제거합니다.
 - publish target이 명시되면 그에 맞는 provider reference를 참고해 게시 흐름을 진행합니다.
-- publish target이 아직 없으면, 초안 준비 후 TUI-style 질문으로 다음 선택을 진행합니다.
+- publish target이 아직 없으면, 초안 준비 후 짧고 예측 가능한 선택 질문으로 다음 단계를 진행합니다.
 
 이 스킬 자체는 기본적으로 **외부 게시를 직접 수행하는 스킬이 아닙니다.**
 
-즉, `/oplog`는 기본적으로 **현재 세션 기준 문서 초안 준비 → preview → TUI-style 선택 질문** 순서로 동작합니다. 사용자가 아직 publish target을 정하지 않았거나 source repository override가 필요하면, 초안을 준비한 뒤 필요한 항목만 묻는 것이 기본 동작입니다.
+즉, 이 스킬의 기본 동작은 **현재 작업 맥락 기준 문서 초안 준비 → preview → 다음 단계 선택 질문** 순서입니다. 사용자가 아직 publish target을 정하지 않았거나 source repository override가 필요하면, 초안을 준비한 뒤 필요한 항목만 묻는 것이 기본 동작입니다.
 
 ## 언제 사용하나요
 
@@ -32,7 +33,7 @@ AI를 통해 수행한 작업 내용을 한국어 문서로 요약하고, Obsidi
 - AI와 함께 진행한 작업 내용을 문서로 남기고 싶을 때
 - 특정 작업의 배경, 결정사항, 결과물, 후속 액션을 정리하고 싶을 때
 - 같은 형식의 작업 요약을 여러 게시 대상에 일관되게 보내고 싶을 때
-- 현재 세션 내용을 먼저 문서화한 뒤, 저장소 override나 게시 대상을 사용자가 선택해야 할 때
+- 현재 작업 맥락을 먼저 문서화한 뒤, 저장소 override나 게시 대상을 사용자가 선택해야 할 때
 
 ## 핵심 개념
 
@@ -53,18 +54,18 @@ AI를 통해 수행한 작업 내용을 한국어 문서로 요약하고, Obsidi
 
 문서는 **source repository 기준으로 생성**되고, **publish target 기준으로 게시**됩니다.
 
-## 가장 중요한 규칙: 현재 세션 기준 초안 먼저 준비
+## 가장 중요한 규칙: 현재 작업 맥락 기준 초안 먼저 준비
 
-`/oplog`가 호출되면 기본적으로 **현재 세션**과 **현재 워크스페이스**를 기준으로 문서 초안을 먼저 준비합니다.
+스킬이 호출되면 기본적으로 **현재 작업 맥락**과 **현재 워크스페이스**를 기준으로 문서 초안을 먼저 준비합니다.
 
 source repository를 별도로 먼저 고르는 것은 기본값이 아닙니다. 다만 아래 경우에는 초안 준비 후 사용자에게 확인합니다.
 
 - 여러 저장소가 실제로 섞여 있어 source of truth가 바뀔 수 있을 때
-- 사용자가 현재 세션이 아니라 다른 저장소/브랜치를 기준으로 문서화하길 원할 때
-- 현재 세션 정보만으로는 저장소 메타데이터를 안전하게 확정할 수 없을 때
+- 사용자가 현재 작업 맥락이 아니라 다른 저장소/브랜치를 기준으로 문서화하길 원할 때
+- 현재 맥락 정보만으로는 저장소 메타데이터를 안전하게 확정할 수 없을 때
 
 예시 질문:
-- "현재 세션 기준으로 초안을 준비했습니다. 다른 저장소를 기준으로 다시 잡을까요?"
+- "현재 작업 맥락 기준으로 초안을 준비했습니다. 다른 저장소를 기준으로 다시 잡을까요?"
 - "여러 저장소가 관련되어 있습니다. source of truth로 볼 저장소를 하나 선택해주세요."
 
 ## 저장소 선택 규칙
@@ -80,7 +81,7 @@ source repository를 별도로 먼저 고르는 것은 기본값이 아닙니다
 - 임의로 추정하지 않습니다
 - 사용자에게 하나를 선택하게 합니다
 
-현재 세션과 현재 워크스페이스에서 안전하게 추정 가능한 경우에는, 이를 기본 `source_repo_name` / `source_repo_path`로 사용한 뒤 사용자가 override할 수 있게 합니다.
+현재 작업 맥락과 현재 워크스페이스에서 안전하게 추정 가능한 경우에는, 이를 기본 `source_repo_name` / `source_repo_path`로 사용한 뒤 사용자가 override할 수 있게 합니다.
 
 ## 기본 출력 구조
 
@@ -149,7 +150,7 @@ date: ...
 좋은 예:
 - MVP는 상위 skill + leaf skill 구조로 간다
 - Obsidian은 exact path 기준으로 게시한다
-- Atlassian은 Confluence create-first로 시작한다
+- Atlassian은 개인 스페이스의 저장소별 부모 페이지 아래에 Confluence create-first로 시작한다
 
 좋지 않은 예:
 - 중간에 시도했던 임시 생각
@@ -171,7 +172,7 @@ date: ...
 실제로 행동 가능한 후속 작업만 적습니다.
 
 ### 5. Source Context
-전체 대화 dump 대신, 아래 정도만 간결하게 포함합니다. 기본값은 **현재 세션**입니다.
+전체 대화 dump 대신, 아래 정도만 간결하게 포함합니다. 기본값은 **현재 작업 맥락**입니다.
 
 - 사용자 요청 요약
 - 핵심 제약
@@ -209,16 +210,32 @@ date: ...
 
 ## Obsidian 선택 규칙
 
-Obsidian을 publish target으로 선택한 경우, 가능한 한 먼저 `obsidian vaults`로 vault 목록을 조회하고 사용자에게 선택하게 합니다.
+Obsidian을 publish target으로 선택한 경우, 가능한 한 먼저 `obsidian vaults`와 동등한 vault discovery 수단으로 vault 목록을 조회하고 사용자에게 선택하게 합니다.
 
 vault가 하나뿐이면 기본 후보로 제안할 수 있지만, 여러 개라면 반드시 목록을 보여주고 사용자가 선택하게 합니다.
 
-## TUI-style 선택 규칙
+## Confluence 선택 규칙
 
-`/oplog`는 문서 초안을 먼저 준비한 뒤, 남은 선택지를 **짧고 예측 가능한 TUI-style 질문**으로 진행합니다.
+Confluence를 publish target으로 선택한 경우, 가능한 한 **현재 인증된 사용자의 개인 스페이스**를 기본 저장 위치 후보로 사용합니다.
+
+권장 기본 구조:
+
+1. 현재 사용자 정보를 조회해 개인 스페이스를 식별합니다.
+2. 개인 스페이스 접근과 write 가능 여부를 확인합니다.
+3. 개인 스페이스 안에 `source_repo_name`과 같은 저장소별 부모 페이지를 기본 후보로 사용합니다.
+4. 작업 문서는 해당 저장소별 부모 페이지 아래에 create-first로 생성합니다.
+
+예:
+- 개인 스페이스 → `generate-oplog` → `[generate-oplog] 2026-04-23 작업 문맥 정리`
+
+개인 스페이스는 편의를 위한 기본 위치일 뿐이며, 비공개 저장소나 보안 경계로 설명하면 안 됩니다. 개인 스페이스를 찾을 수 없거나 접근/write 권한을 확인할 수 없으면 임의 space를 추정하지 말고 사용자에게 대상 space 또는 parent page를 선택하게 합니다.
+
+## 선택 질문 규칙
+
+이 스킬은 문서 초안을 먼저 준비한 뒤, 남은 선택지를 **짧고 예측 가능한 선택 질문**으로 진행합니다.
 
 권장 순서:
-1. 현재 세션 기준 초안 준비
+1. 현재 작업 맥락 기준 초안 준비
 2. 짧은 preview 또는 draft-ready 상태 표시
 3. 다음 단계 선택지 제시
 4. 선택된 항목에 대해서만 추가 질문 진행
@@ -242,19 +259,19 @@ vault가 하나뿐이면 기본 후보로 제안할 수 있지만, 여러 개라
 
 ## provider reference 사용
 
-현재 세션 기준 초안을 만든 뒤, 사용자가 destination을 선택하면 아래 reference 문서를 참고합니다.
+현재 작업 맥락 기준 초안을 만든 뒤, 사용자가 destination을 선택하면 아래 reference 문서를 참고합니다.
 
 - [`references/obsidian.md`](./references/obsidian.md)
 - [`references/atlassian.md`](./references/atlassian.md)
 
-publish target이 아직 명시되지 않았다면, provider reference를 바로 적용하지 말고 먼저 TUI-style 선택으로 다음 단계를 고르게 합니다. source repository 질문은 override나 ambiguity가 있을 때만 진행합니다.
+publish target이 아직 명시되지 않았다면, provider reference를 바로 적용하지 말고 먼저 선택 질문으로 다음 단계를 고르게 합니다. source repository 질문은 override나 ambiguity가 있을 때만 진행합니다.
 
 ## 권장 실행 흐름
 
-1. 현재 세션과 현재 워크스페이스를 기준으로 문서 초안을 만든다
+1. 현재 작업 맥락과 현재 워크스페이스를 기준으로 문서 초안을 만든다
 2. 민감정보를 제거한다
 3. draft-ready 상태와 짧은 preview를 보여준다
-4. TUI-style 선택지로 다음 단계를 고르게 한다
+4. 선택 질문으로 다음 단계를 고르게 한다
 5. 필요하면 source repository override를 확인한다
 6. publish 대상과 목적지를 확인한다
 7. provider reference를 참고해 게시 여부와 방식을 확정한다

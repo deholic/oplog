@@ -10,7 +10,7 @@
 - 문서 구조 표준화와 민감정보 제거 규칙도 부모 `oplog` skill에서 상속받습니다.
 - 이 reference는 주로 `vault / path / mode` 확정과 실제 게시 흐름을 다룹니다.
 
-이 reference는 부모 `oplog`가 **현재 세션 기준으로 초안을 이미 준비했다는 전제**에서 사용합니다. 따라서 여기서는 source repository를 처음부터 다시 고르기보다, draft-ready 상태에서 Obsidian 대상 정보만 구체화하는 데 집중합니다.
+이 reference는 부모 `oplog`가 **현재 작업 맥락 기준으로 초안을 이미 준비했다는 전제**에서 사용합니다. 따라서 여기서는 source repository를 처음부터 다시 고르기보다, draft-ready 상태에서 Obsidian 대상 정보만 구체화하는 데 집중합니다.
 
 ## 먼저 확인할 것
 
@@ -19,7 +19,7 @@
 - `source_repo_path`
 - `source_branch` (선택)
 
-여러 저장소 중 어떤 저장소를 기준으로 생성된 문서인지 불분명하거나, 사용자가 현재 세션 기준 초안을 override하길 원하면 그때만 사용자에게 다시 확인합니다.
+여러 저장소 중 어떤 저장소를 기준으로 생성된 문서인지 불분명하거나, 사용자가 현재 작업 맥락 기준 초안을 override하길 원하면 그때만 사용자에게 다시 확인합니다.
 
 ### 2. 게시 대상
 - `vault`
@@ -36,7 +36,7 @@ Obsidian에 게시하기 전에 가능한 경우 **먼저 vault 목록을 조회
 
 권장 순서:
 
-1. `obsidian vaults` 로 사용 가능한 vault 목록을 조회합니다.
+1. `obsidian vaults`와 동등한 vault discovery 수단으로 사용 가능한 vault 목록을 조회합니다.
 2. vault가 하나뿐이면 그 값을 기본 후보로 제안합니다.
 3. vault가 여러 개면 사용자에게 목록을 보여주고 선택하게 합니다.
 4. vault 목록을 조회할 수 없는 경우에만 수동 입력을 받습니다.
@@ -85,7 +85,7 @@ frontmatter가 있다면 이를 깨지 않도록 주의합니다.
 
 ## 결정 규칙
 
-- 먼저 `obsidian vaults`로 vault 후보를 조회합니다.
+- 먼저 `obsidian vaults`와 동등한 discovery 수단으로 vault 후보를 조회합니다.
 - vault가 하나면 제안하고, 여러 개면 선택하게 합니다.
 - note가 없으면 `create`
 - 하나의 파일에 이력을 누적하려면 `append`
@@ -94,7 +94,7 @@ frontmatter가 있다면 이를 깨지 않도록 주의합니다.
 
 ## fallback 규칙
 
-`obsidian` CLI를 사용할 수 없거나 `vaults` 조회가 실패하면:
+`obsidian` CLI 또는 동등한 runtime command surface를 사용할 수 없거나 `vaults` 조회가 실패하면:
 - 최종 Markdown을 먼저 보여줍니다.
 - vault 목록 자동 조회가 불가능하다고 설명합니다.
 - 그때만 vault 이름을 직접 입력받습니다.
@@ -118,14 +118,14 @@ Obsidian 게시는 **문서 생성**과 **저장 검증**을 분리해서 다룹
 
 은 같은 상태가 아닙니다.
 
-`obsidian` CLI를 사용할 수 없거나, 앱 runtime이 준비되지 않았거나, vault/path를 안전하게 확정할 수 없으면 **저장 성공으로 처리하지 않습니다.**
+`obsidian` CLI 또는 동등한 publish surface를 사용할 수 없거나, 앱 runtime이 준비되지 않았거나, vault/path를 안전하게 확정할 수 없으면 **저장 성공으로 처리하지 않습니다.**
 이 경우 기본 동작은 **draft-only fallback** 입니다.
 
-### 1. usable Obsidian CLI 판단 기준
+### 1. usable Obsidian publish path 판단 기준
 
 아래를 모두 만족할 때만 “usable Obsidian publish path”로 봅니다.
 
-1. `obsidian` CLI를 실행할 수 있다
+1. `obsidian` CLI 또는 동등한 게시 명령 surface를 실행할 수 있다
 2. 현재 publish mode(`create` / `append` / `prepend` / `daily:*`)가 지원 범위 안에 있다
 3. 필요한 경우 앱 runtime 또는 CLI 연동이 실제로 사용 가능하다
 4. 대상 vault를 안전하게 확정할 수 있다
@@ -247,7 +247,9 @@ Obsidian 자동 저장이 불가능할 때는 아래 중 하나를 제안합니�
 - 실패를 여러 종류로 구분해야 하는데 한 버킷으로 뭉개지 말 것
 - draft-only fallback을 조용히 처리하지 말고, 반드시 저장 실패/미실행 상태를 명시할 것
 
-## CLI 예시
+## Runtime command 예시
+
+아래 예시는 host/runtime이 `obsidian` CLI-compatible command surface를 제공할 때에만 참고합니다.
 
 ### create
 ```bash

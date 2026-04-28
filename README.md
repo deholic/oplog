@@ -1,13 +1,132 @@
-# generate-oplog
+# oplog
 
-`generate-oplog` is a small multi-target skill/plugin repo for producing the `oplog` skill from one canonical source.
+`oplog`는 AI와 함께 진행한 작업을 한국어 작업 로그로 정리하고, 필요하면 Obsidian이나 Confluence 같은 지식 저장소에 게시할 수 있도록 준비하는 에이전트 스킬입니다.
 
-The goal is to keep the actual behavior in one place, then render target-specific artifacts for:
+목표는 단순합니다. 대화가 끝난 뒤 “무슨 일을 했고, 왜 그렇게 결정했는지”를 다시 기억하려고 긴 transcript를 뒤지는 대신, 바로 남길 수 있는 문서 초안을 만드는 것입니다.
 
-- OpenCode
-- Claude plugin / Marketplace packaging
+## 무엇을 해주나요?
 
-## Repository structure
+- 현재 작업 맥락과 워크스페이스를 기준으로 작업 요약을 만듭니다.
+- 결정사항, 산출물, 다음 단계를 같은 형식으로 정리합니다.
+- 비밀번호, 토큰, API 키 같은 민감정보를 문서에서 제외하도록 안내합니다.
+- Obsidian과 Confluence 게시 흐름을 target별 규칙에 맞춰 준비합니다.
+- 실제 외부 write 전에 preview와 대상 정보를 먼저 확인합니다.
+
+기본 출력은 아래 구조를 따릅니다.
+
+```md
+# {제목}
+
+## 작업 요약
+...
+
+## 주요 결정사항
+- ...
+
+## 산출물
+- ...
+
+## 다음 단계
+- ...
+```
+
+## 기본 흐름
+
+1. 현재 작업 맥락 기준으로 문서 초안을 만듭니다.
+2. source repository 정보를 정리합니다.
+3. 민감정보가 포함되지 않도록 정리합니다.
+4. 짧은 preview를 보여줍니다.
+5. 사용자가 원하면 게시 대상을 고릅니다.
+6. 게시 대상별 provider rule에 따라 저장 또는 게시 가능성을 확인합니다.
+
+사용자가 명시적으로 게시를 요청하지 않았다면 `oplog`는 외부 시스템에 바로 쓰지 않습니다. 먼저 문서 초안과 대상 정보를 보여주는 dry-run 성격의 흐름을 기본으로 합니다.
+
+## Source repository와 publish target
+
+`oplog`는 문서의 기준이 되는 저장소와 문서가 저장될 위치를 분리해서 다룹니다.
+
+- **source repository**: 어떤 작업 맥락을 문서화하는지 나타내는 기준 저장소
+- **publish target**: 완성된 문서를 어디에 저장하거나 게시할지 나타내는 대상
+
+예를 들어 `/Users/rainy/Repos/my-service`에서 작업한 내용을 정리한 뒤, 결과 문서를 Obsidian vault나 Confluence 개인 스페이스에 저장할 수 있습니다.
+
+source repository는 기본적으로 현재 작업 맥락과 현재 워크스페이스에서 추정합니다. 여러 저장소가 섞여 있거나 사용자가 다른 기준을 원할 때만 다시 확인합니다.
+
+## Obsidian 저장 규칙
+
+Obsidian을 publish target으로 선택하면 가능한 경우 먼저 vault 목록을 조회하고, 사용자가 선택한 vault를 기준으로 저장합니다.
+
+저장 경로에는 저장소명이 드러나는 구조를 권장합니다.
+
+```text
+Worklogs/{source_repo_name}/{date}.md
+Projects/{source_repo_name}/{title}.md
+```
+
+예:
+
+- `Worklogs/generate-oplog/2026-04-23.md`
+- `Projects/generate-oplog/skill-plan.md`
+
+지원하는 기본 mode는 `create`, `append`, `prepend`입니다. daily note workflow는 사용자가 명시적으로 요청한 경우에만 검토합니다.
+
+## Confluence 게시 규칙
+
+Confluence를 publish target으로 선택하면 가능한 경우 현재 인증된 사용자의 **개인 스페이스**를 기본 저장 위치 후보로 사용합니다.
+
+Obsidian의 “저장소별 폴더”에 해당하는 구조는 Confluence에서 **저장소별 부모 페이지**로 표현합니다.
+
+```text
+개인 스페이스
+└── {source_repo_name}
+    └── {작업 문서 title}
+```
+
+예:
+
+- 개인 스페이스 → `generate-oplog` → `[generate-oplog] 2026-04-23 작업 문맥 정리`
+
+개인 스페이스는 편의를 위한 기본 위치일 뿐, 비공개 보안 경계로 간주하지 않습니다. 민감한 문서는 별도 권한이 설정된 private space나 사용자가 명시한 space를 사용해야 합니다.
+
+현재 Confluence 흐름은 create-first MVP입니다. update/upsert는 기본 동작으로 약속하지 않고, MCP tool/schema와 권한을 확인할 수 있을 때만 안내합니다.
+
+## 실패와 fallback
+
+외부 저장이나 게시가 실패해도 문서 초안 생성과 게시 성공을 같은 상태로 취급하지 않습니다.
+
+예를 들어 아래 상황에서는 draft-only fallback으로 전환합니다.
+
+- Obsidian CLI 또는 동등한 publish surface를 사용할 수 없음
+- Confluence MCP write tool을 확인할 수 없음
+- 인증, 권한, 조직 정책 문제로 write가 차단됨
+- 대상 vault, space, parent page를 안전하게 확정할 수 없음
+- write 요청 결과를 검증할 수 없음
+
+이 경우 `oplog`는 게시 성공처럼 말하지 않고, 최종 문서 본문과 실패 이유, 다음 선택지를 함께 반환해야 합니다.
+
+## 사용 예시
+
+에이전트에게 이런 식으로 요청할 수 있습니다.
+
+```text
+이번 작업 oplog로 정리해줘.
+```
+
+```text
+이 작업 내용 Confluence에 작업 로그로 남겨줘.
+```
+
+```text
+Obsidian에 저장할 수 있게 oplog 초안 만들어줘.
+```
+
+```text
+방금 PR 작업 내용 기준으로 의사결정이랑 다음 단계까지 정리해줘.
+```
+
+## Repository layout
+
+이 저장소는 `oplog` 스킬의 canonical source와 target별 generated output을 함께 관리합니다.
 
 ```text
 canonical/
@@ -27,123 +146,26 @@ skills/oplog/                  # generated Claude plugin skill output
 opencode.jsonc                 # OpenCode-only runtime config
 ```
 
-## Source of truth
+## Development workflow
 
-Do not hand-edit generated target files.
+수정의 source of truth는 `canonical/oplog/` 아래에 있습니다.
 
-The editable source of truth lives under `canonical/oplog/`:
-
-- `canonical/oplog/meta.json`: shared metadata such as skill name, plugin name, version, and description
+- `canonical/oplog/meta.json`: skill/plugin metadata
 - `canonical/oplog/body.md`: host-neutral main skill body
-- `canonical/oplog/references/obsidian.md`: provider reference for Obsidian
-- `canonical/oplog/references/atlassian.md`: provider reference for Atlassian / Confluence
+- `canonical/oplog/references/obsidian.md`: Obsidian provider reference
+- `canonical/oplog/references/atlassian.md`: Atlassian / Confluence provider reference
 
-Generated files currently include:
-
-- `.agents/skills/oplog/SKILL.md`
-- `.agents/skills/oplog/references/*`
-- `skills/oplog/SKILL.md`
-- `skills/oplog/references/*`
-- `.claude-plugin/plugin.json`
-
-## Why this structure exists
-
-This repo started from an OpenCode-oriented skill layout. To support Claude as well without maintaining two copies of the same instructions, the shared behavior was moved into canonical Markdown and rendered back out to each target.
-
-That means:
-
-- shared behavior stays in canonical docs
-- host-specific packaging stays at the edges
-- generated outputs are reproducible
-- future Claude-specific packaging can grow without re-forking the core skill text
-
-## Render workflow
-
-After editing anything under `canonical/oplog/`, regenerate the target outputs:
-
-```bash
-npm run render
-```
-
-This runs the same renderer as:
-
-```bash
-node scripts/render-targets.js
-```
-
-To verify that generated files are up to date:
-
-```bash
-npm run check:generated
-```
-
-This checks the same generated outputs as:
-
-```bash
-node scripts/render-targets.js --check
-```
-
-The check command fails when a generated file is missing or has drifted from the canonical source.
-
-## Manual verification workflow
-
-This repo does not install or rely on git hooks. After editing canonical inputs, run the render and check commands manually before committing:
-
-```bash
-npm run render
-npm run check:generated
-```
-
-Commit both the canonical edits and the regenerated target outputs together so the published skill artifacts stay reproducible.
-
-## Editing rules
-
-### Edit these
-
-- `canonical/oplog/meta.json`
-- `canonical/oplog/body.md`
-- `canonical/oplog/references/*.md`
-- `scripts/render-targets.js` when target generation rules need to change
-
-### Do not edit these by hand
+Generated output은 직접 수정하지 않습니다.
 
 - `.agents/skills/oplog/**`
 - `skills/oplog/**`
 - `.claude-plugin/plugin.json`
 
-If you need to change a generated file, make the change in `canonical/` or in the renderer, then regenerate.
+canonical source를 수정한 뒤 target output을 다시 생성합니다.
 
-## Available npm scripts
+```bash
+npm run render
+npm run check:generated
+```
 
-- `npm run render`: regenerate `.agents/skills/oplog`, `skills/oplog`, and `.claude-plugin/plugin.json`
-- `npm run check:generated`: verify generated files are present and up to date
-
-## Current targets
-
-### OpenCode
-
-- Skill output path: `.agents/skills/oplog/`
-- Runtime config: `opencode.jsonc`
-- `opencode.jsonc` remains manually owned because it is OpenCode-specific runtime wiring, not shared skill behavior
-
-### Claude plugin / Marketplace
-
-- Skill output path: `skills/oplog/`
-- Plugin manifest: `.claude-plugin/plugin.json`
-- The current manifest is intentionally minimal and should only grow as Claude packaging requirements become concrete
-
-## Design guidelines
-
-When extending this repo, prefer these rules:
-
-1. Keep the main skill text host-neutral.
-2. Keep provider policy canonical where possible.
-3. Move host-specific command syntax or packaging details to the edges.
-4. Avoid creating a second source of truth in generated folders.
-5. Add new metadata only when at least one real target needs it.
-
-## Notes
-
-- The generated skill frontmatter currently uses the shared `skillName` from `canonical/oplog/meta.json`.
-- The Claude plugin namespace currently uses `pluginName` from the same metadata file.
-- If Claude Marketplace later requires more plugin files, add them as generated edge artifacts rather than pushing that detail back into the canonical body.
+이 저장소는 git hook에 의존하지 않습니다. commit 전에 위 명령을 수동으로 실행하고, canonical 변경과 generated output을 함께 commit합니다.

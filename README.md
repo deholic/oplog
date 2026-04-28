@@ -21,9 +21,6 @@ canonical/
 scripts/
   render-targets.js
 
-.githooks/
-  pre-commit
-
 .agents/skills/oplog/           # generated OpenCode-facing skill output
 skills/oplog/                  # generated Claude plugin skill output
 .claude-plugin/plugin.json     # generated Claude plugin manifest
@@ -88,33 +85,16 @@ node scripts/render-targets.js --check
 
 The check command fails when a generated file is missing or has drifted from the canonical source.
 
-## Git hook workflow
+## Manual verification workflow
 
-This repo includes a tracked pre-commit hook at `.githooks/pre-commit`.
-
-One-time local setup:
+This repo does not install or rely on git hooks. After editing canonical inputs, run the render and check commands manually before committing:
 
 ```bash
-git config core.hooksPath .githooks
+npm run render
+npm run check:generated
 ```
 
-After that, every commit will:
-
-1. run `npm run render`
-2. re-stage generated outputs
-3. abort the commit if rendering fails
-
-The hook only re-stages generated targets:
-
-- `.agents/skills/oplog/**`
-- `skills/oplog/**`
-- `.claude-plugin/plugin.json`
-
-To avoid accidentally committing unstaged canonical edits, the hook blocks commits when a render input file has both staged and unstaged changes. The protected inputs are:
-
-- `canonical/oplog/**`
-- `scripts/render-targets.js`
-- `package.json`
+Commit both the canonical edits and the regenerated target outputs together so the published skill artifacts stay reproducible.
 
 ## Editing rules
 

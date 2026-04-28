@@ -1,0 +1,9 @@
+{
+  "name": "generate-oplog",
+  "private": true,
+  "version": "0.4.0",
+  "scripts": {
+    "render": "node scripts/render-targets.js",
+    "check:generated": "node scripts/render-targets.js --check"
+  }
+}

@@ -1,0 +1,37 @@
+#!/bin/sh
+
+set -eu
+
+HOOK_DIR=$(CDPATH= cd -- "$(dirname "$0")" && pwd)
+REPO_ROOT=$(CDPATH= cd -- "$HOOK_DIR/.." && pwd)
+cd "$REPO_ROOT"
+
+INPUT_PATHS="canonical/oplog scripts/render-targets.js package.json"
+GENERATED_PATHS=".agents/skills/oplog skills/oplog .claude-plugin/plugin.json"
+
+PARTIAL_FILES=""
+
+for file in $(git diff --name-only --cached -- $INPUT_PATHS); do
+  if ! git diff --quiet -- "$file"; then
+    PARTIAL_FILES="$PARTIAL_FILES
+- $file"
+  fi
+done
+
+if [ -n "$PARTIAL_FILES" ]; then
+  printf '%s\n' "[pre-commit] Refusing commit because render inputs have both staged and unstaged changes." >&2
+  printf '%s\n' "[pre-commit] Commit or stash the remaining edits first, then try again." >&2
+  printf '%b\n' "$PARTIAL_FILES" >&2
+  exit 1
+fi
+
+printf '%s\n' "[pre-commit] Rendering generated artifacts..." >&2
+
+if ! npm run render >&2; then
+  printf '%s\n' "[pre-commit] Render failed. Commit aborted." >&2
+  exit 1
+fi
+
+git add -Af -- $GENERATED_PATHS
+
+printf '%s\n' "[pre-commit] Generated artifacts refreshed and re-staged." >&2

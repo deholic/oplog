@@ -75,6 +75,10 @@ frontmatter가 있다면 이를 깨지 않도록 주의합니다.
 - `daily:append` / `daily:prepend`는 사용자가 "오늘 일지", "daily note"처럼 **일일 노트 workflow를 명시적으로 요청한 경우에만** 사용합니다.
 - daily 모드라고 해서 vault 확인이 불필요한 것은 아니며, 가능한 경우 먼저 vault를 확정합니다.
 
+daily note에 작업 로그 링크나 짧은 작업 기록만 남기는 요청은 가능한 경우 `oplog-daily-note` leaf skill의 절차를 우선 적용합니다. 특히 `작업 일지` heading 아래에 기록해야 하며, heading이 없으면 `### 작업 일지`를 만든 뒤 그 아래에 기록합니다.
+
+Obsidian에서 daily note 본문을 읽거나 섹션 위치를 검증할 수 없고 단순 `daily:append`만 가능한 경우에는, `작업 일지` 섹션 삽입 성공으로 단정하지 않습니다. 이때는 entry 초안을 반환하거나 `Publish attempted but unverified` 상태를 사용합니다.
+
 ## path 설계 권장사항
 
 같은 vault 안에 여러 저장소 문서를 함께 저장할 수 있으므로, 저장소명이 path에 드러나는 구조를 권장합니다.

@@ -7,7 +7,7 @@ description: "AI를 통해 수행한 작업과 컨텍스트를 한국어 문서�
 
 # oplog
 
-AI를 통해 수행한 작업 내용을 한국어 문서로 요약하고, Obsidian이나 Atlassian 같은 대상 시스템에 게시할 수 있도록 준비하는 공통 스킬입니다.
+AI를 통해 수행한 작업 내용을 한국어 문서로 요약하고, Obsidian, Atlassian, Craft 같은 대상 시스템에 게시할 수 있도록 준비하는 공통 스킬입니다.
 
 이 스킬은 게시 자체보다 **현재 작업 맥락 기준 문서 초안 준비**, **문서 구조 표준화**, **민감정보 제거**, **대상별 provider reference를 참고한 게시 판단**을 담당합니다.
 
@@ -224,27 +224,24 @@ date: ...
 - 외부에 노출되면 안 되는 내부 URL
 - 명시적으로 요청되지 않은 개인정보
 
-## Obsidian 선택 규칙
+## Provider routing 규칙
 
-Obsidian을 publish target으로 선택한 경우, 가능한 한 먼저 `obsidian vaults`와 동등한 vault discovery 수단으로 vault 목록을 조회하고 사용자에게 선택하게 합니다.
+provider별 target 선택, capability 확인, 게시 mode, 실패 처리는 각 provider reference를 기준으로 판단합니다.
 
-vault가 하나뿐이면 기본 후보로 제안할 수 있지만, 여러 개라면 반드시 목록을 보여주고 사용자가 선택하게 합니다.
+- Obsidian을 publish target으로 선택한 경우 [`references/obsidian.md`](./references/obsidian.md)를 사용합니다.
+- Confluence를 publish target으로 선택한 경우 [`references/atlassian.md`](./references/atlassian.md)를 사용합니다.
+- Craft를 publish target으로 선택한 경우 [`references/craft.md`](./references/craft.md)를 사용합니다.
+- daily note의 `작업 일지` 섹션에 작업 로그 링크나 짧은 기록만 남기는 요청은 가능한 경우 `oplog-daily-note` leaf skill을 사용합니다.
 
-## Confluence 선택 규칙
+적용 시점:
+- provider reference는 현재 작업 맥락 기준 초안을 만든 뒤, 사용자가 destination을 선택했을 때 적용합니다.
+- publish target이 아직 명시되지 않았다면 provider reference를 바로 적용하지 말고 먼저 선택 질문으로 다음 단계를 고르게 합니다.
+- source repository 질문은 override나 ambiguity가 있을 때만 진행합니다.
 
-Confluence를 publish target으로 선택한 경우, 가능한 한 **현재 인증된 사용자의 개인 스페이스**를 기본 저장 위치 후보로 사용합니다.
-
-권장 기본 구조:
-
-1. 현재 사용자 정보를 조회해 개인 스페이스를 식별합니다.
-2. 개인 스페이스 접근과 write 가능 여부를 확인합니다.
-3. 개인 스페이스 안에 `source_repo_name`과 같은 저장소별 부모 페이지를 기본 후보로 사용합니다.
-4. 작업 문서는 해당 저장소별 부모 페이지 아래에 create-first로 생성합니다.
-
-예:
-- 개인 스페이스 → `generate-oplog` → `[generate-oplog] 2026-04-23 작업 문맥 정리`
-
-개인 스페이스는 편의를 위한 기본 위치일 뿐이며, 비공개 저장소나 보안 경계로 설명하면 안 됩니다. 개인 스페이스를 찾을 수 없거나 접근/write 권한을 확인할 수 없으면 임의 space를 추정하지 말고 사용자에게 대상 space 또는 parent page를 선택하게 합니다.
+공통 원칙:
+- 대상 vault, space, folder, parent page, location 같은 publish target 세부값은 추정하지 않습니다.
+- provider별 runtime, MCP, CLI, 권한, schema, target을 안전하게 확인할 수 없으면 게시 성공으로 처리하지 않습니다.
+- 사용자가 실제 게시를 명시적으로 확인하기 전에는 외부 write를 실행하지 않습니다.
 
 ## 선택 질문 규칙
 
@@ -272,15 +269,6 @@ Confluence를 publish target으로 선택한 경우, 가능한 한 **현재 인�
 - 최종 Markdown 문서를 먼저 생성합니다
 - preview를 보여줍니다
 - 외부 write 동작은 실행하지 않습니다
-
-## provider reference 사용
-
-현재 작업 맥락 기준 초안을 만든 뒤, 사용자가 destination을 선택하면 아래 reference 문서를 참고합니다.
-
-- [`references/obsidian.md`](./references/obsidian.md)
-- [`references/atlassian.md`](./references/atlassian.md)
-
-publish target이 아직 명시되지 않았다면, provider reference를 바로 적용하지 말고 먼저 선택 질문으로 다음 단계를 고르게 합니다. source repository 질문은 override나 ambiguity가 있을 때만 진행합니다.
 
 ## 권장 실행 흐름
 

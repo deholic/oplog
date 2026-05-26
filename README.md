@@ -1,6 +1,6 @@
 # oplog
 
-`oplog`는 AI와 함께 진행한 작업을 한국어 작업 로그로 정리하고, 필요하면 Obsidian이나 Confluence 같은 지식 저장소에 게시할 수 있도록 준비하는 에이전트 스킬입니다.
+`oplog`는 AI와 함께 진행한 작업을 한국어 작업 로그로 정리하고, 필요하면 Obsidian, Confluence, Craft 같은 지식 저장소에 게시할 수 있도록 준비하는 에이전트 스킬입니다.
 
 목표는 단순합니다. 대화가 끝난 뒤 “무슨 일을 했고, 왜 그렇게 결정했는지”를 다시 기억하려고 긴 transcript를 뒤지는 대신, 바로 남길 수 있는 문서 초안을 만드는 것입니다.
 
@@ -9,7 +9,7 @@
 - 현재 작업 맥락과 워크스페이스를 기준으로 작업 요약을 만듭니다.
 - 결정사항, 산출물, 다음 단계를 같은 형식으로 정리합니다.
 - 비밀번호, 토큰, API 키 같은 민감정보를 문서에서 제외하도록 안내합니다.
-- Obsidian과 Confluence 게시 흐름을 target별 규칙에 맞춰 준비합니다.
+- Obsidian, Confluence, Craft 게시 흐름을 target별 규칙에 맞춰 준비합니다.
 - 실제 외부 write 전에 preview와 대상 정보를 먼저 확인합니다.
 
 기본 출력은 아래 구조를 따릅니다.
@@ -90,6 +90,32 @@ Obsidian의 “저장소별 폴더”에 해당하는 구조는 Confluence에서
 
 현재 Confluence 흐름은 create-first MVP입니다. update/upsert는 기본 동작으로 약속하지 않고, MCP tool/schema와 권한을 확인할 수 있을 때만 안내합니다.
 
+## Craft 게시 규칙
+
+Craft를 publish target으로 선택하면 가능한 경우 먼저 Craft MCP 연결과 tool/schema를 확인합니다.
+
+Craft의 “저장소별 폴더” 또는 parent location 구조는 아래를 권장합니다.
+
+```text
+Craft space
+└── {source_repo_name}
+    └── {작업 문서 title}
+```
+
+예:
+
+- Craft space → `generate-oplog` → `[generate-oplog] 2026-04-23 작업 문맥 정리`
+
+현재 Craft 흐름은 MCP-first create-first MVP입니다. Craft MCP를 사용할 수 없으면 REST API로 자동 우회하지 않고, 게시 가능한 Markdown 초안과 실패 이유를 반환합니다. update/upsert와 API fallback은 별도 확장 범위입니다.
+
+필요하면 생성된 작업 문서 링크를 Craft daily note에 함께 남길 수 있습니다. 이 동작은 작업 문서 게시와 별개의 추가 write이므로, 사용자가 요청하거나 확인한 경우에만 실행합니다.
+
+## Daily note 작업 일지
+
+Craft나 Obsidian daily note에는 작업 문서 본문을 복제하지 않고, `작업 일지` 섹션 아래에 짧은 링크 또는 한 줄 기록만 남깁니다.
+
+`작업 일지` 머리글이 없으면 먼저 `### 작업 일지`를 만든 뒤 그 아래에 항목을 추가합니다. 같은 문서 링크가 이미 있으면 중복으로 추가하지 않습니다.
+
 ## 실패와 fallback
 
 외부 저장이나 게시가 실패해도 문서 초안 생성과 게시 성공을 같은 상태로 취급하지 않습니다.
@@ -98,6 +124,7 @@ Obsidian의 “저장소별 폴더”에 해당하는 구조는 Confluence에서
 
 - Obsidian CLI 또는 동등한 publish surface를 사용할 수 없음
 - Confluence MCP write tool을 확인할 수 없음
+- Craft MCP write tool을 확인할 수 없음
 - 인증, 권한, 조직 정책 문제로 write가 차단됨
 - 대상 vault, space, parent page를 안전하게 확정할 수 없음
 - write 요청 결과를 검증할 수 없음
@@ -163,29 +190,39 @@ canonical/
     references/
       obsidian.md
       atlassian.md
+      craft.md
+  oplog-daily-note/
+    meta.json
+    body.md
 
 scripts/
   render-targets.js
 
 .agents/skills/oplog/           # generated OpenCode-facing skill output
+.agents/skills/oplog-daily-note/
 skills/oplog/                  # generated Claude plugin skill output
+skills/oplog-daily-note/
 .claude-plugin/plugin.json     # generated Claude plugin manifest
 opencode.jsonc                 # OpenCode-only runtime config
 ```
 
 ## Development workflow
 
-수정의 source of truth는 `canonical/oplog/` 아래에 있습니다.
+수정의 source of truth는 `canonical/` 아래에 있습니다.
 
 - `canonical/oplog/meta.json`: skill/plugin metadata
 - `canonical/oplog/body.md`: host-neutral main skill body
 - `canonical/oplog/references/obsidian.md`: Obsidian provider reference
 - `canonical/oplog/references/atlassian.md`: Atlassian / Confluence provider reference
+- `canonical/oplog/references/craft.md`: Craft MCP provider reference
+- `canonical/oplog-daily-note/body.md`: Craft/Obsidian daily note 작업 일지 기록 leaf skill
 
 Generated output은 직접 수정하지 않습니다.
 
 - `.agents/skills/oplog/**`
+- `.agents/skills/oplog-daily-note/**`
 - `skills/oplog/**`
+- `skills/oplog-daily-note/**`
 - `.claude-plugin/plugin.json`
 
 canonical source를 수정한 뒤 target output을 다시 생성합니다.

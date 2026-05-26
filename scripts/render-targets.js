@@ -5,6 +5,7 @@ const path = require('path');
 
 const repoRoot = path.resolve(__dirname, '..');
 const canonicalRoot = path.join(repoRoot, 'canonical', 'oplog');
+const dailyNoteCanonicalRoot = path.join(repoRoot, 'canonical', 'oplog-daily-note');
 const checkOnly = process.argv.includes('--check');
 
 function read(filePath) {
@@ -30,8 +31,8 @@ function frontmatter(meta) {
   ].join('\n');
 }
 
-function generatedSkill(meta, body) {
-  return `${frontmatter(meta)}<!-- Generated from canonical/oplog. Do not edit target copies by hand. -->\n\n${body.trim()}\n`;
+function generatedSkill(meta, body, canonicalLabel) {
+  return `${frontmatter(meta)}<!-- Generated from ${canonicalLabel}. Do not edit target copies by hand. -->\n\n${body.trim()}\n`;
 }
 
 function pluginManifest(meta) {
@@ -71,16 +72,28 @@ function main() {
   const body = read(path.join(canonicalRoot, 'body.md'));
   const obsidianReference = read(path.join(canonicalRoot, 'references', 'obsidian.md'));
   const atlassianReference = read(path.join(canonicalRoot, 'references', 'atlassian.md'));
+  const craftReference = read(path.join(canonicalRoot, 'references', 'craft.md'));
+  const dailyNoteMeta = JSON.parse(read(path.join(dailyNoteCanonicalRoot, 'meta.json')));
+  const dailyNoteBody = read(path.join(dailyNoteCanonicalRoot, 'body.md'));
 
   const skillOutputs = [
     '.agents/skills/oplog',
     'skills/oplog',
   ];
+  const dailyNoteSkillOutputs = [
+    '.agents/skills/oplog-daily-note',
+    'skills/oplog-daily-note',
+  ];
 
   for (const outputDir of skillOutputs) {
-    writeGenerated(path.join(outputDir, 'SKILL.md'), generatedSkill(meta, body));
+    writeGenerated(path.join(outputDir, 'SKILL.md'), generatedSkill(meta, body, 'canonical/oplog'));
     writeGenerated(path.join(outputDir, 'references', 'obsidian.md'), `${normalize(obsidianReference).trim()}\n`);
     writeGenerated(path.join(outputDir, 'references', 'atlassian.md'), `${normalize(atlassianReference).trim()}\n`);
+    writeGenerated(path.join(outputDir, 'references', 'craft.md'), `${normalize(craftReference).trim()}\n`);
+  }
+
+  for (const outputDir of dailyNoteSkillOutputs) {
+    writeGenerated(path.join(outputDir, 'SKILL.md'), generatedSkill(dailyNoteMeta, dailyNoteBody, 'canonical/oplog-daily-note'));
   }
 
   writeGenerated('.claude-plugin/plugin.json', pluginManifest(meta));

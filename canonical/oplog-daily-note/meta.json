@@ -1,0 +1,5 @@
+{
+  "skillName": "oplog-daily-note",
+  "version": "0.4.0",
+  "description": "Craft나 Obsidian daily note의 작업 일지 섹션에 AI 작업 로그 링크나 짧은 작업 기록을 남깁니다."
+}

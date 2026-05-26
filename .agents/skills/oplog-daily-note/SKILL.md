@@ -34,17 +34,29 @@ Craft나 Obsidian daily note의 `작업 일지` 섹션에 AI 작업 로그 링�
 
 provider가 명시되지 않았고 둘 이상 가능하면 사용자에게 선택하게 합니다.
 
-## 실행 흐름
+## Provider routing 규칙
+
+provider별 daily note 조회, `작업 일지` 섹션 탐색, 쓰기 command, 검증 방식은 각 provider reference를 기준으로 판단합니다.
+
+- Craft daily note에 기록하는 경우 [`references/craft.md`](./references/craft.md)를 사용합니다.
+- Obsidian daily note에 기록하는 경우 [`references/obsidian.md`](./references/obsidian.md)를 사용합니다.
+
+공통 원칙:
+- daily note에는 작업 문서 본문 전체를 복제하지 않고 짧은 link entry 또는 plain entry만 남깁니다.
+- entry는 반드시 `작업 일지` heading 아래에 둡니다.
+- `작업 일지` heading이 없으면 provider reference의 방식으로 먼저 heading을 만든 뒤 그 아래에 둡니다.
+- 같은 작업 문서 링크나 같은 작업 기록이 이미 있으면 중복으로 추가하지 않습니다.
+- daily note 읽기, 중복 확인, 쓰기, read-back 검증 중 하나라도 안전하게 수행할 수 없으면 성공으로 단정하지 않습니다.
+
+## 공통 실행 흐름
 
 1. provider를 확정합니다.
 2. provider의 daily note read/write capability를 확인합니다.
-3. daily note를 읽습니다.
-4. daily note 전체에서 중복 항목이 있는지 확인합니다.
-5. `작업 일지` heading을 찾습니다.
-6. heading이 없으면 daily note 끝에 `### 작업 일지`를 추가합니다.
-7. link entry 또는 plain entry를 `작업 일지` 섹션 아래에 추가합니다.
-8. daily note를 다시 읽어 반영 여부를 검증합니다.
-9. 결과에는 provider, date, entry, link 여부, write/verify status를 포함합니다.
+3. 해당 provider reference를 읽고 적용합니다.
+4. daily note를 읽고 중복 항목이 있는지 확인합니다.
+5. `작업 일지` 섹션에 link entry 또는 plain entry를 추가합니다.
+6. daily note를 다시 읽어 반영 여부를 검증합니다.
+7. 결과에는 provider, date, entry, link 여부, write/verify status를 포함합니다.
 
 ## Daily note 대상 날짜
 
@@ -67,71 +79,6 @@ provider가 명시되지 않았고 둘 이상 가능하면 사용자에게 선�
 ```
 
 entry는 짧게 유지합니다. 상세 내용은 작업 문서에 남기고, daily note에는 찾아가기 위한 앵커만 남깁니다.
-
-## `작업 일지` 섹션 규칙
-
-daily note에는 반드시 `작업 일지` heading 아래에 entry를 추가합니다.
-
-1. daily note를 가능한 한 구조화된 형식으로 읽습니다.
-2. heading marker를 제거한 텍스트가 `작업 일지`와 정확히 일치하는 heading block 또는 Markdown heading을 찾습니다.
-3. heading이 있으면, 그 heading 다음부터 다음 heading 전까지를 `작업 일지` 섹션으로 봅니다.
-4. 같은 섹션에 기존 항목이 있으면 섹션의 마지막 항목 뒤에 추가합니다.
-5. 다음 heading이 있으면 그 heading 바로 앞에 추가합니다.
-6. heading이 없으면 daily note 끝에 `### 작업 일지`와 entry를 함께 추가합니다.
-
-섹션 경계를 안전하게 계산할 수 없으면 heading 바로 아래에 추가합니다. 그래도 중복 여부는 먼저 확인해야 합니다.
-
-## 중복 방지
-
-쓰기 전에 daily note 전체에서 아래 중 하나가 이미 있는지 확인합니다.
-
-- 같은 `document_id`
-- 같은 `root_block_id`
-- 같은 Craft/Obsidian link
-- 같은 title과 같은 `source_repo_name`이 함께 포함된 작업 일지 항목
-
-중복이면 새 heading이나 entry를 추가하지 않고 `Daily note entry already present` 상태를 반환합니다.
-
-daily note를 읽을 수 없거나 중복 여부를 확인할 수 없으면 기본적으로 쓰기를 보류합니다.
-
-## Craft adapter
-
-Craft MCP가 사용 가능할 때 적용합니다.
-
-권장 command surface:
-
-```bash
-connection info
-blocks get --date today --depth 2 --format json
-blocks add --date today --position end --markdown "### 작업 일지\n\n- [작업 문서](craftdocs://open?...&blockId=...) — 작업 로그"
-blocks add --siblingId <blockId> --position after --markdown "- [작업 문서](craftdocs://open?...&blockId=...) — 작업 로그"
-blocks add --siblingId <nextHeadingId> --position before --markdown "- [작업 문서](craftdocs://open?...&blockId=...) — 작업 로그"
-```
-
-Craft에서는 structured block list를 사용해 `작업 일지` heading과 다음 heading을 찾습니다.
-
-## Obsidian adapter
-
-Obsidian CLI 또는 동등한 runtime command surface가 사용 가능할 때 적용합니다.
-
-필요 capability:
-
-- vault discovery 또는 명시된 vault 확인
-- daily note content read
-- daily note content update 또는 section-aware append
-- write 결과 검증을 위한 read-back
-
-권장 흐름:
-
-1. vault를 확정합니다.
-2. Obsidian daily note의 실제 path 또는 daily note read surface를 확인합니다.
-3. daily note Markdown을 읽습니다.
-4. Markdown heading 기준으로 `작업 일지` 섹션을 찾습니다.
-5. heading이 없으면 파일 끝에 `### 작업 일지`와 entry를 추가합니다.
-6. heading이 있으면 다음 heading 전 또는 섹션 마지막에 entry를 삽입합니다.
-7. 저장 후 다시 읽어 중복 없이 반영됐는지 확인합니다.
-
-`daily:append` 같은 단순 append만 가능하고 daily note를 읽거나 섹션 위치를 검증할 수 없다면, 성공으로 처리하지 않습니다. 이 경우 Markdown entry 초안을 반환하고 `Draft ready, daily note not updated` 또는 `Daily note entry attempted but unverified` 상태를 사용합니다.
 
 ## 실패 처리
 

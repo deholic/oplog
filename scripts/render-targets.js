@@ -75,6 +75,8 @@ function main() {
   const craftReference = read(path.join(canonicalRoot, 'references', 'craft.md'));
   const dailyNoteMeta = JSON.parse(read(path.join(dailyNoteCanonicalRoot, 'meta.json')));
   const dailyNoteBody = read(path.join(dailyNoteCanonicalRoot, 'body.md'));
+  const dailyNoteCraftReference = read(path.join(dailyNoteCanonicalRoot, 'references', 'craft.md'));
+  const dailyNoteObsidianReference = read(path.join(dailyNoteCanonicalRoot, 'references', 'obsidian.md'));
 
   const skillOutputs = [
     '.agents/skills/oplog',
@@ -94,6 +96,8 @@ function main() {
 
   for (const outputDir of dailyNoteSkillOutputs) {
     writeGenerated(path.join(outputDir, 'SKILL.md'), generatedSkill(dailyNoteMeta, dailyNoteBody, 'canonical/oplog-daily-note'));
+    writeGenerated(path.join(outputDir, 'references', 'craft.md'), `${normalize(dailyNoteCraftReference).trim()}\n`);
+    writeGenerated(path.join(outputDir, 'references', 'obsidian.md'), `${normalize(dailyNoteObsidianReference).trim()}\n`);
   }
 
   writeGenerated('.claude-plugin/plugin.json', pluginManifest(meta));

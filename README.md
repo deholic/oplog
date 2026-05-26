@@ -194,6 +194,9 @@ canonical/
   oplog-daily-note/
     meta.json
     body.md
+    references/
+      craft.md
+      obsidian.md
 
 scripts/
   render-targets.js
@@ -216,6 +219,8 @@ opencode.jsonc                 # OpenCode-only runtime config
 - `canonical/oplog/references/atlassian.md`: Atlassian / Confluence provider reference
 - `canonical/oplog/references/craft.md`: Craft MCP provider reference
 - `canonical/oplog-daily-note/body.md`: Craft/Obsidian daily note 작업 일지 기록 leaf skill
+- `canonical/oplog-daily-note/references/craft.md`: Craft daily note provider reference
+- `canonical/oplog-daily-note/references/obsidian.md`: Obsidian daily note provider reference
 
 Generated output은 직접 수정하지 않습니다.
 
